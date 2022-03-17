@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 
+
 url = "https://iata-and-icao-codes.p.rapidapi.com/airlines"
 
 headers = {

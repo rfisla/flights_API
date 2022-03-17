@@ -7,10 +7,10 @@ headers: {
           X-Access-Token: '25ced8893baf9bcb20657fa1c3703700'
           }
 
-querystring: {
-              "destination":"Rome",
-              "origin":"Madrid",
-              "return_date":"2022-04",
-              "depart_date":"2022-04",
-              "currency":"EUR"
-              }
+#querystring: {
+              #"destination":"Barcelona",
+              #"origin":"Madrid",
+              #"return_date":"2022-04",
+              #"depart_date":"2022-04",
+              #"currency":"EUR"
+              #}
