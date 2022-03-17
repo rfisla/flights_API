@@ -21,13 +21,13 @@ class JsonToDataframe:
         self.destination = config_info.info['querystring']['destination']
 
         results = pd.DataFrame()
-        results['price'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['price'],
+        results['Price'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['price'],
                                          apicall.results_len))
-        results['airline'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['airline'],
+        results['Airline'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['airline'],
                                            apicall.results_len))
-        results['departure'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['departure_at'],
+        results['Departure'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['departure_at'],
                                              apicall.results_len))
-        results['return'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['return_at'],
+        results['Return'] = pd.Series(map(lambda i: apicall.response['data'][self.destination][i]['return_at'],
                                           apicall.results_len))
         results['Origin'] = config_info.origin
         results['Destination'] = config_info.destination
@@ -61,7 +61,11 @@ def get_params():
 
     df = JsonToDataframe(apicall, config)
     if df.results.empty is False:
-        df.results['airline'] = list(map(lambda row: decoding.get_airline_name(row, airlines), df.results['airline']))
+
+        try:
+            df.results['Airline'] = list(map(lambda row: decoding.get_airline_name(row, airlines), df.results['Airline']))
+        except IndexError:
+            pass
         results = df.results.to_json()
         return jsonify(results)
         #df.results.to_csv('src/apicall_df.csv', index=False)
