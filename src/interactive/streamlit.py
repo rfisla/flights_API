@@ -40,6 +40,9 @@ class UserDateOptions:
         elif options == "Choose a specific date":
             self.departure_date = st.date_input('Departure date').isoformat()
             self.return_date = st.date_input('Return date').isoformat()
+        else:
+            self.return_date=""
+            self.departure_date=""
 
 
 class UserCurrencyOptions:
@@ -52,10 +55,11 @@ class PersonalizedSearch:
         search_button = st.button(label="Search", help="Press to get your selected info")
         if search_button:
             decoding = Decoding()
-            cities_info = pd.read_csv('src/datasets/city_codes.csv', sep=",", usecols=[0, 2]).dropna().reset_index(drop=True)
+            cities_info = pd.read_csv('src/datasets/city_codes.csv', sep=",", usecols=[0, 2])\
+                .dropna().reset_index(drop=True)
             cities_info['City/Airport'] = cities_info['City/Airport'].str.upper()
 
-            if decoding.get_city_code(origin_input, cities_info) != 'No results' and \
+            if decoding.get_city_code(origin_input, cities_info) != 'No results' or \
                     decoding.get_city_code(destination_input, cities_info) != 'No results':
 
                 filters_dict = {
@@ -64,7 +68,7 @@ class PersonalizedSearch:
                     "return_date": return_date,
                     "depart_date": departure_date,
                     "currency": currency
-                }
+                    }
                 try:
                     api_data = gcp_request_get(filters_dict)
                     results_table = pd.read_json(api_data)
@@ -82,7 +86,8 @@ if __name__ == "__main__":
     dates = UserDateOptions()
     currency = UserCurrencyOptions()
 
-    PersonalizedSearch(places.origin_input,
+    PersonalizedSearch(
+                       places.origin_input,
                        places.destination_input,
                        dates.departure_date,
                        dates.return_date,

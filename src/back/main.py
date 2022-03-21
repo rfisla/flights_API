@@ -1,20 +1,38 @@
 import pandas as pd
 import requests
-from src.back.utils import SetAPIParams, Decoding, ReadDataFrames, NotFoundError
+from src.back.utils import SetAPIParams, Decoding, ReadDataFrames
+from src.back.api_response_operations import ExtractInfo, CreateResultsDataframe
 from flask import Flask, jsonify, request
 import os
 
+"""
+querystring= {
+              "destination":"-",
+              "origin":"Madrid",
+              "return_date":"2022-04",
+              "depart_date":"2022-04",
+              "currency":"EUR"
+              }
+config = SetAPIParams(querystring)
+datasets_charger = ReadDataFrames()
+cities = datasets_charger.city_info
+# airlines = datasets_charger.airlines_info
 
+decoding = Decoding()
+config.info['querystring']['destination'] = decoding.get_city_code(config.destination, cities)
+config.info['querystring']['origin'] = decoding.get_city_code(config.origin, cities)
+"""
 class APIRequest:
     def __init__(self, config):
-        request = requests.request("GET", config.info['url'], headers=config.info['headers'],
+        query = requests.request("GET", config.info['url'], headers=config.info['headers'],
                                    params=config.info['querystring'])
-        self.response = request.json()
+        self.response = query.json()
         try:
-            self.results_len = list(self.response['data'][config.info['querystring']['destination']])
+            self.destinations = list(self.response['data'])
         except TypeError as e:
             raise e('Error in the API CALL')
 
+"""
 class JsonToDataframe:
 
     def __init__(self, apicall, config_info):
@@ -33,6 +51,7 @@ class JsonToDataframe:
         results['Destination'] = config_info.destination
         self.results = results
 
+"""
 
 app = Flask(__name__)
 
@@ -40,8 +59,7 @@ app = Flask(__name__)
 @app.route("/", methods=["GET"])
 def hello():
     return "Hello World"
-#{'currency': 'EUR', 'depart_date': '2022-03-17', 'destination': 'barcelona', 'origin': 'MADRID', 'return_date': '2022-03-17'}
-#query = {'currency': 'EUR', 'depart_date': '2022-04', 'destination': 'barcelona', 'origin': 'MADRID', 'return_date': '2022-04'}
+
 
 @app.route("/streamlit-request", methods=["GET"])
 def get_params():
@@ -50,25 +68,33 @@ def get_params():
 
     datasets_charger = ReadDataFrames()
     cities = datasets_charger.city_info
-    airlines = datasets_charger.airlines_info
+    #airlines = datasets_charger.airlines_info
 
     decoding = Decoding()
-    config.info['querystring']['destination'] = decoding.get_city_code(config.destination, cities)
+
+    if config.info['querystring']['destination'] != '-':
+        config.info['querystring']['destination'] = decoding.get_city_code(config.destination, cities)
     config.info['querystring']['origin'] = decoding.get_city_code(config.origin, cities)
-    #return jsonify({'results': config.info})
+
     apicall = APIRequest(config)
+    extract_info_from_json = ExtractInfo(apicall.response, apicall.destinations)
+    df = CreateResultsDataframe(extract_info_from_json.destination_list,
+                                extract_info_from_json.prices_list,
+                                extract_info_from_json.airlines_list,
+                                extract_info_from_json.departures_list,
+                                extract_info_from_json.returns_list)
+    #df = JsonToDataframe(apicall, config)
 
-
-    df = JsonToDataframe(apicall, config)
     if df.results.empty is False:
-
+        """
         try:
-            df.results['Airline'] = list(map(lambda row: decoding.get_airline_name(row, airlines), df.results['Airline']))
+            df.results['Airline'] = list(map(lambda row: decoding.get_airline_name(row, airlines),
+                                             df.results['Airline']))
         except IndexError:
             pass
+        """
         results = df.results.to_json()
         return jsonify(results)
-        #df.results.to_csv('src/apicall_df.csv', index=False)
     else:
         return jsonify({'Error': 'Not results founded for the selected dates '})
 
