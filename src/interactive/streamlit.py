@@ -2,10 +2,10 @@ import pathlib
 import sys
 import pandas as pd
 from datetime import date
+import streamlit as st
 
 sys.path.append(str(pathlib.Path().absolute()).split("/src")[0] + "/src")
 
-import streamlit as st
 from back.utils import Decoding, ReadDataFrames, gcp_request_get
 
 
@@ -41,8 +41,8 @@ class UserDateOptions:
             self.departure_date = st.date_input('Departure date').isoformat()
             self.return_date = st.date_input('Return date').isoformat()
         else:
-            self.return_date=""
-            self.departure_date=""
+            self.return_date = ""
+            self.departure_date = ""
 
 
 class UserCurrencyOptions:
@@ -55,8 +55,11 @@ class PersonalizedSearch:
         search_button = st.button(label="Search", help="Press to get your selected info")
         if search_button:
             decoding = Decoding()
-            cities_info = pd.read_csv('src/datasets/city_codes.csv', sep=",", usecols=[0, 2])\
+            cities_info = pd.read_csv('src/datasets/city_codes.csv', sep=",", usecols=[0, 1, 2])\
                 .dropna().reset_index(drop=True)
+            cities_info['City/Airport'] = list(
+                map(lambda city, country: ', '.join([city, country]), cities_info['City/Airport'], cities_info['Country']))
+            cities_info.drop(['Country'], axis=1, inplace=True)
             cities_info['City/Airport'] = cities_info['City/Airport'].str.upper()
 
             if decoding.get_city_code(origin_input, cities_info) != 'No results' or \
@@ -73,6 +76,7 @@ class PersonalizedSearch:
                     api_data = gcp_request_get(filters_dict)
                     results_table = pd.read_json(api_data)
                     st.write('### Results', results_table)
+                    st.markdown(f'Destination from {origin_input}')
                 except Exception:
                     st.write('No results for this search. Try again with another dates')
             else:

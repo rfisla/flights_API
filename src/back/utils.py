@@ -24,8 +24,11 @@ class ReadDataFrames:
     def __init__(self):
         try:
             airlines_info = pd.read_csv('../datasets/iata_airlines_codes.csv', sep=",")
-            city_info = pd.read_csv('../datasets/city_codes.csv', sep=",", usecols=[0, 2])\
+            city_info = pd.read_csv('../datasets/city_codes.csv', sep=",", usecols=[0, 1, 2])\
                 .dropna().reset_index(drop=True)
+            city_info['City/Airport'] = list(
+                map(lambda city, country: ', '.join([city, country]), city_info['City/Airport'], city_info['Country']))
+            city_info.drop(['Country'], axis=1, inplace=True)
             city_info['City/Airport'] = city_info['City/Airport'].str.upper()
 
             self.airlines_info = airlines_info
@@ -66,8 +69,8 @@ class Decoding:
             return airline_code
 
 
-
 def gcp_request_get(query):
     url = "http://127.0.0.1:8504/streamlit-request"
     response = requests.get(url, params=query)
     return response.json()
+
