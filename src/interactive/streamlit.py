@@ -6,7 +6,8 @@ import streamlit as st
 
 sys.path.append(str(pathlib.Path().absolute()).split("/src")[0] + "/src")
 
-from back.utils import Decoding, ReadDataFrames, gcp_request_get
+from back.utils import Decoding, ReadDataFrames
+from interactive.front_utils import get_request, get_results
 
 
 class DisplayInterface:
@@ -14,7 +15,7 @@ class DisplayInterface:
     st.cache(suppress_st_warning=True)
 
     st.markdown("# Flights search")
-    st.markdown("Found the cheapest option!")
+    st.markdown("#### Find the cheapest option!")
     im = "http://villa-groupcorp.com/sites/default/files/styles/full_size/public/flight-hero04c1.jpg?itok=hhscHSGZ"
     st.image(im, width=400)
 
@@ -23,7 +24,8 @@ class UserPlaceChoices:
     def __init__(self):
         st.markdown("### Make your choice")
         self.origin_input = st.text_input("Origin")
-        self.destination_input = st.text_input("Destination")
+        self.destination_input = st.text_input("Destination "
+                                               "(Write  '-'  if you want to check all possible destinations)")
 
 
 class UserDateOptions:
@@ -62,8 +64,7 @@ class PersonalizedSearch:
             cities_info.drop(['Country'], axis=1, inplace=True)
             cities_info['City/Airport'] = cities_info['City/Airport'].str.upper()
 
-            if decoding.get_city_code(origin_input, cities_info) != 'No results' or \
-                    decoding.get_city_code(destination_input, cities_info) != 'No results':
+            if decoding.get_city_code(origin_input, cities_info) != 'No results':
 
                 filters_dict = {
                     "origin": origin_input,
@@ -73,10 +74,11 @@ class PersonalizedSearch:
                     "currency": currency
                     }
                 try:
-                    api_data = gcp_request_get(filters_dict)
+                    request = get_request(filters_dict)
+                    api_data = get_results(request)
                     results_table = pd.read_json(api_data)
-                    st.write('### Results', results_table)
-                    st.markdown(f'Destination from {origin_input}')
+                    st.markdown('###' f' Destinations from {origin_input}')
+                    st.write(results_table)
                 except Exception:
                     st.write('No results for this search. Try again with another dates')
             else:

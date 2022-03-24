@@ -10,12 +10,13 @@ class NotFoundError(Exception):
 class SetAPIParams:
     def __init__(self, query):
         try:
-            with open('../interactive/config.yml', 'r') as configfile:
+            with open('../back/config.yml', 'r') as configfile:
                 self.info = yaml.safe_load(configfile)
-            self.query = query
-            self.info['querystring'] = self.query
-            self.origin = self.query['origin']
-            self.destination = self.query['destination']
+            self.info["destination"] = query['destination']
+            self.info["origin"] = query["origin"]
+            self.info["return_date"] = query["return_date"]
+            self.info["depart_date"] = query["depart_date"]
+            self.info["currency"] = query["currency"]
         except FileNotFoundError:
             self.info = 'File not found'
 
@@ -61,7 +62,6 @@ class Decoding:
 
     @staticmethod
     def get_airline_name(airline_code: str, airlines_info: pd.DataFrame) -> str:
-
         try:
             airline_name_match = airlines_info[airlines_info['IATA code'] == airline_code]['IATA airlines'].values[0]
             return airline_name_match
@@ -69,8 +69,5 @@ class Decoding:
             return airline_code
 
 
-def gcp_request_get(query):
-    url = "http://127.0.0.1:8504/streamlit-request"
-    response = requests.get(url, params=query)
-    return response.json()
+
 

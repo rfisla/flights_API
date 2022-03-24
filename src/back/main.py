@@ -1,4 +1,3 @@
-import pandas as pd
 import requests
 from src.back.utils import SetAPIParams, Decoding, ReadDataFrames
 from src.back.api_response_operations import ExtractInfo, CreateResultsDataframe
@@ -8,13 +7,14 @@ import os
 
 class APIRequest:
     def __init__(self, config):
-        query = requests.request("GET", config.info['url'], headers=config.info['headers'],
-                                 params=config.info['querystring'])
+        headers = {'x-rapidapi-host': config['x-rapidapi-host'],
+                   'x-rapidapi-key': config['x-rapidapi-key'],
+                   'X-Access-Token': config['X-Access-Token']}
+        params = {'destination': config['destination'], "origin": config["origin"], "return_date":
+            config["return_date"], "depart_date": config["depart_date"], "currency": config["currency"]}
+        query = requests.request("GET", config['url'], headers=headers,
+                                 params=params)
         self.response = query.json()
-        try:
-            self.destinations = list(self.response['data'])
-        except TypeError as e:
-            raise e('Error in the API CALL')
 
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def hello():
 
 
 @app.route("/streamlit-request", methods=["GET"])
-def get_params():
+def get_query_params():
     query = request.args.to_dict()
     config = SetAPIParams(query)
 
@@ -35,12 +35,23 @@ def get_params():
 
     decoding = Decoding()
 
-    if config.info['querystring']['destination'] != '-':
-        config.info['querystring']['destination'] = decoding.get_city_code(config.destination, cities)
-    config.info['querystring']['origin'] = decoding.get_city_code(config.origin, cities)
+    if config.info['destination'] != '-':
+        config.info['destination'] = decoding.get_city_code(config.info['destination'], cities)
+    config.info['origin'] = decoding.get_city_code(config.info['origin'], cities)
+
+    return jsonify(config.info)
+
+
+@app.route("/api_call", methods=["GET"])
+def get_results():
+    config = request.args
 
     apicall = APIRequest(config)
-    extract_info_from_json = ExtractInfo(apicall.response, apicall.destinations)
+    try:
+        list(apicall.response['data'])
+    except TypeError as e:
+        raise e('Error in the API CALL')
+    extract_info_from_json = ExtractInfo(apicall.response, apicall.response['data'])
     df = CreateResultsDataframe(extract_info_from_json.destination_list,
                                 extract_info_from_json.prices_list,
                                 extract_info_from_json.airlines_list,
