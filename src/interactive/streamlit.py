@@ -73,14 +73,14 @@ class PersonalizedSearch:
                     "depart_date": departure_date,
                     "currency": currency
                     }
-                try:
-                    request = get_request(filters_dict)
-                    api_data = get_results(request)
-                    results_table = pd.read_json(api_data)
-                    st.markdown('###' f' Destinations from {origin_input}')
-                    st.write(results_table)
-                except Exception:
-                    st.write('No results for this search. Try again with another dates')
+                #try:
+                request = get_request(filters_dict)
+                api_data = get_results(request)
+                results_table = pd.read_json(api_data)
+                st.markdown('###' f' Destinations from {origin_input}')
+                st.write(results_table)
+                #except Exception:
+                    #st.write('No results for this search. Try again with another dates')
             else:
                 st.write('Origin or destination not recognized. \n'
                          '- Write the city name in english')
