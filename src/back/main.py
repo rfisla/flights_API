@@ -66,4 +66,4 @@ def get_results():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True, host="https://api-cheapflights.herokuapp.com")
